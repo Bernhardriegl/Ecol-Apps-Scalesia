@@ -1,6 +1,6 @@
 #FINAL
 #Scalesia_file; Bernhard Riegl, started on 5/27/2019, first submitted 3/21/21, fixed and cleaned by 10/19/21
-#resubmitted 11/4/2021
+#resubmitted 11/4/2021, modified after review 1/10/2022 and final checks 4/8/2022
 
 #Map of the Galapagos
 library(maps)
@@ -25,9 +25,9 @@ library(nlme)
 library(lme4)
 
 #PART 1: GROWTH MODEL FOR SCALESIA PEDUNCULATA
-DBH<-read.table("G:/University/PAPERS/E-Pacific/Scalesia/Data/Scalesia_DBF-TH.txt",header=T)
-DBH_Treat<-read.table("G:/University/PAPERS/E-Pacific/Scalesia/Data/Scalesia-DBH-Height_Treatment.txt",header=T)
-DBH_Control<-read.table("G:/University/PAPERS/E-Pacific/Scalesia/Data/Scalesia-DBH-Height_Control.txt",header=T)
+DBH<-read.table("path to/Scalesia_DBF-TH.txt",header=T)
+DBH_Treat<-read.table("path to/Scalesia-DBH-Height_Treatment.txt",header=T)
+DBH_Control<-read.table("path to/Scalesia-DBH-Height_Control.txt",header=T)
 
 #calculated for the first DBH dataset, taken from random spots within forest IN 2014
 # calculate the parameters for the non-linear model, which is y=a-b*exp(-cx)
@@ -61,7 +61,7 @@ anova(model6,model5)
 t.test(DBH_Treat$DBH_cm,DBH_Control$DBH_cm)
 t.test(DBH_Treat$Height_cm,DBH_Control$Height_cm)
 
-#=====FIG1=====
+#=====MAIN TEXT, FIGURE 2=====
 av<-seq(0,30,0.29)
 bv3<-predict(model3,list(DBH_cm=av))
 bv4<-predict(model4,list(DBH_cm=av))
@@ -84,8 +84,8 @@ lines(av,bv6,col=rgb(0.9,0.6,0))
 text(30,700,"2020-C",col=rgb(0.9,0.6,0))
 
 #======> PART 2: GROWTH RATES (DBH-RATIOS) AND THE INFLUENCE OF RUBUS COMPETITION
-SCAL.T<-read.table("G:/University/PAPERS/E-Pacific/Scalesia/Data/Scalesia_DBH_Treatment2.txt", header=T)
-SCAL.RC<-read.table("G:/University/PAPERS/E-Pacific/Scalesia/Data/Scalesia_DBH_RubusControl2.txt", header=T)
+SCAL.T<-read.table("PATH TO/Scalesia_DBH_Treatment2.txt", header=T)
+SCAL.RC<-read.table("PATH TO/Scalesia_DBH_RubusControl2.txt", header=T)
 # remove Sep-14 and Aug-15
 SCAL.T<-SCAL.T[,-c(4,6)]#cut out September and August measurements, so that only annual February is left
 SCAL.T[is.na(SCAL.T)]<-0 #the dead trees are coded NA, make 0
