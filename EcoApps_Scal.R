@@ -2,11 +2,11 @@
 #Scalesia_file; Bernhard Riegl, started on 5/27/2019, first submitted 3/21/21, fixed and cleaned by 10/19/21
 #resubmitted 11/4/2021, modified after review 1/10/2022 and final checks 4/8/2022
 
-#Map of the Galapagos
+#Map of the Galapagos for MAIN TEXT FIGURE 1
 library(maps)
 library(marmap)
+library(mapproj)
 # This makes the world map 
-library(maps)
 windows(5,5)
 map("world", regions=".",exact=F, boundary=T,interior=T,proj="ortho",orientation=c(10,-80,0),fill=T,wrap=c(0,360))
 #Galapagos map
@@ -25,9 +25,9 @@ library(nlme)
 library(lme4)
 
 #PART 1: GROWTH MODEL FOR SCALESIA PEDUNCULATA
-DBH<-read.table("path to/Scalesia_DBF-TH.txt",header=T)
-DBH_Treat<-read.table("path to/Scalesia-DBH-Height_Treatment.txt",header=T)
-DBH_Control<-read.table("path to/Scalesia-DBH-Height_Control.txt",header=T)
+DBH<-read.table("D:/University/PAPERS/E-Pacific/Scalesia/Data/Scalesia_DBF-TH.txt",header=T)
+DBH_Treat<-read.table("D:/University/PAPERS/E-Pacific/Scalesia/Data/Scalesia-DBH-Height_Treatment.txt",header=T)
+DBH_Control<-read.table("D:/University/PAPERS/E-Pacific/Scalesia/Data/Scalesia-DBH-Height_Control.txt",header=T)
 
 #calculated for the first DBH dataset, taken from random spots within forest IN 2014
 # calculate the parameters for the non-linear model, which is y=a-b*exp(-cx)
@@ -37,22 +37,25 @@ b=920
 y=200 #where curve is rising most steeply, height is greatest...next line
 x=2 #where x=2
 c=(log((a-y)/b))/x
-#===>TABLE S-1
+#===>APPENDIX 1, TABLE S-1
 model1<-nls(Height_cm ~ a-b*exp(-c*DBH_cm),data=DBH, start=list(a=1000,b=920,c=0.12))#3 parameter asymptotic exponential
 summary(model1)
-#===>TABLE S-2
+#===>APPENDIX 1, TABLE S-2
 model2<-nls(Height_cm ~ a*(1-exp(-c*DBH_cm)),data=DBH,start=list(a=1000,c=0.12))#2 parameter asymptotic exponential
 summary(model2)
+AIC(model1)
+anova(model1,model2)
+#===>APPENDIX 1, TABLE S-3
 #asymptotic exponential uses more parameters, while the 2-parameter asymptotic correctly puts the curve through the origin
 av<-seq(0,30,0.29)
 bv1<-predict(model1,list(DBH_cm=av))
 bv2<-predict(model2,list(DBH_cm=av))
 #now do the same for the treatment area and the control area DATA IN 2020
-#====> TABLE S-3
+
 model3<-nls(Height_cm ~ a-b*exp(-c*DBH_cm),data=DBH_Treat, start=list(a=1000,b=920,c=0.12))#3 parameter asymptotic exponential
 model4<-nls(Height_cm ~ a*(1-exp(-c*DBH_cm)),data=DBH_Treat,start=list(a=1000,c=0.12))#2 parameter asymptotic exponential
 anova(model4,model3)#specify the reduced model first to avoid negative values
-#====> TABLE S-4
+
 model5<-nls(Height_cm ~ a-b*exp(-c*DBH_cm),data=DBH_Control, start=list(a=1000,b=920,c=0.12))#3 parameter asymptotic exponential
 model6<-nls(Height_cm ~ a*(1-exp(-c*DBH_cm)),data=DBH_Control,start=list(a=1000,c=0.12))#2 parameter asymptotic exponential
 anova(model6,model5)
@@ -84,8 +87,8 @@ lines(av,bv6,col=rgb(0.9,0.6,0))
 text(30,700,"2020-C",col=rgb(0.9,0.6,0))
 
 #======> PART 2: GROWTH RATES (DBH-RATIOS) AND THE INFLUENCE OF RUBUS COMPETITION
-SCAL.T<-read.table("PATH TO/Scalesia_DBH_Treatment2.txt", header=T)
-SCAL.RC<-read.table("PATH TO/Scalesia_DBH_RubusControl2.txt", header=T)
+SCAL.T<-read.table("D:/University/PAPERS/E-Pacific/Scalesia/Data/Scalesia_DBH_Treatment2.txt", header=T)
+SCAL.RC<-read.table("D:/University/PAPERS/E-Pacific/Scalesia/Data/Scalesia_DBH_RubusControl2.txt", header=T)
 # remove Sep-14 and Aug-15
 SCAL.T<-SCAL.T[,-c(4,6)]#cut out September and August measurements, so that only annual February is left
 SCAL.T[is.na(SCAL.T)]<-0 #the dead trees are coded NA, make 0
@@ -126,7 +129,7 @@ Scal2<-SCAL%>%
 #========THIS IS THE DBH-ratio=======================================
 ScalGrw2<-left_join(Scal2,Grw2)
 
-#=========data for FIGURE 3 MAIN TEXT====================================
+#=========data for FIGURE 4 MAIN TEXT====================================
 ScalGrwT<-filter(ScalGrw2,group==1 & year!="Mar21")#TREATMENT
 ScalGrwC<-filter(ScalGrw2,group==2 & year!="Mar21")#WITH RUBUS CONTROL
 #there are many NAs and zeros in there, they make no sense as growth rate
@@ -137,7 +140,41 @@ ScalGrwC[ScalGrwC==Inf]<-0
 SG_T<-ScalGrwT[-which(ScalGrwT$Growth.rate==0),]
 SG_C<-ScalGrwC[-which(ScalGrwC$Growth.rate==0),]
 
-#==> FIGURE 3 <====
+#Relationship of DHB-ratio with diameter as second-order polynomial in main text
+# APPENDIX 1, TABLE S-4
+Gr_mod1<-lm(Growth.rate~poly(DBH,2),data=SG_C)
+summary.lm(Gr_mod1)
+summary.aov(Gr_mod1)
+#or fit exponential decay
+# Select an approximate $\theta$, since theta must be lower than min(y), and greater than zero
+theta.0 <- min(SG_C$Growth.rate) * 0.5  
+# Estimate the rest parameters using a linear model
+model.0 <- lm(log(Growth.rate - theta.0) ~ DBH, data=SG_C)  
+alpha.0 <- exp(coef(model.0)[1])
+beta.0 <- coef(model.0)[2]
+# Starting parameters
+start <- list(alpha = alpha.0, beta = beta.0, theta = theta.0)
+#if error is additive, then it is constant with x-axis and we should not use log-scale
+Gr_mod2 <- nls(Growth.rate ~ alpha * exp(beta * DBH) + theta , data = SG_C, start = start)
+summary(Gr_mod2)
+#lines(SG_C$DBH,predict(Gr_mod5,list(x=SG_C$DBH)),col='skyblue',lwd=3)
+AIC(Gr_mod2,Gr_mod1)
+
+Gr_mod3<-lm(Growth.rate~poly(DBH,2),data=SG_T)
+summary.lm(Gr_mod3)
+#Gr_mod4<-lm(log(Growth.rate)~DBH,data=SG_T)#if error multiplicative, grows with x-axis, then it is contsant on log-scale
+theta.0 <- min(SG_C$Growth.rate) * 0.5  
+model.0 <- lm(log(Growth.rate - theta.0) ~ DBH, data=SG_C)  
+alpha.0 <- exp(coef(model.0)[1])
+beta.0 <- coef(model.0)[2]
+start1 <- list(alpha = alpha.0, beta = beta.0, theta = theta.0)
+start2<-list(alpha = alpha.0, beta = beta.0)
+Gr_mod4 <- nls(Growth.rate ~ alpha * exp(beta * DBH) + theta , data = SG_C, start = start1)
+Gr_mod5 <- nls(Growth.rate ~ alpha * exp(beta * DBH) , data = SG_C, start = start2)
+anova(Gr_mod4,Gr_mod5)#model simplification not justified, keep theta or model is signifcantly worse
+AIC(Gr_mod4,Gr_mod3)
+
+#==> APPENDIX 1, FIGURE S1 <====
 # function for computing mean, DS, max and min values
 #note, the correct equation for the 95%SI would be mean+/-SI*t(0.975,n-1)
 min.mean.sd.max <- function(x) {
@@ -181,61 +218,55 @@ p4<-ggplot(data=filter(ScalGrwT, Growth.rate>0.5 & Growth.rate<1.5),aes(x=DBH,y=
 windows(25,20)
 ggarrange(p1,p2,p3,p4,labels=c("A","B","C","D"),ncol=2,nrow=2)
 
-#Relationship of DHB-ratio with diameter as second-order polynomial in main text
-# TABLE SI-4
-Gr_mod1<-lm(Growth.rate~poly(DBH,2),data=SG_C)
-summary.lm(Gr_mod1)
-summary.aov(Gr_mod1)
-#or fit exponential decay
-# Select an approximate $\theta$, since theta must be lower than min(y), and greater than zero
-theta.0 <- min(SG_C$Growth.rate) * 0.5  
-# Estimate the rest parameters using a linear model
-model.0 <- lm(log(Growth.rate - theta.0) ~ DBH, data=SG_C)  
-alpha.0 <- exp(coef(model.0)[1])
-beta.0 <- coef(model.0)[2]
-# Starting parameters
-start <- list(alpha = alpha.0, beta = beta.0, theta = theta.0)
-#if error is additive, then it is constant with x-axis and we should not use log-scale
-Gr_mod2 <- nls(Growth.rate ~ alpha * exp(beta * DBH) + theta , data = SG_C, start = start)
-summary(Gr_mod2)
-#lines(SG_C$DBH,predict(Gr_mod5,list(x=SG_C$DBH)),col='skyblue',lwd=3)
-AIC(Gr_mod1,Gr_mod2)
-
-
-Gr_mod3<-lm(Growth.rate~poly(DBH,2),data=SG_T)
-summary.lm(Gr_mod3)
-#Gr_mod4<-lm(log(Growth.rate)~DBH,data=SG_T)#if error multiplicative, grows with x-axis, then it is contsant on log-scale
-theta.0 <- min(SG_C$Growth.rate) * 0.5  
-model.0 <- lm(log(Growth.rate - theta.0) ~ DBH, data=SG_C)  
-alpha.0 <- exp(coef(model.0)[1])
-beta.0 <- coef(model.0)[2]
-start1 <- list(alpha = alpha.0, beta = beta.0, theta = theta.0)
-start2<-list(alpha = alpha.0, beta = beta.0)
-Gr_mod4 <- nls(Growth.rate ~ alpha * exp(beta * DBH) + theta , data = SG_C, start = start1)
-Gr_mod5 <- nls(Growth.rate ~ alpha * exp(beta * DBH) , data = SG_C, start = start2)
-anova(Gr_mod4,Gr_mod5)#model simplification not justified, keep theta or model is signifcantly worse
-AIC(Gr_mod4,Gr_mod3)
-
-# ====> Fig. S-1  <========
-windows(10,5)
+# ====> MAIN TEXT, Figure 3  <========
+windows(11,5)
 par(mfrow=c(1,2))
-plot(SG_C$DBH,SG_C$Growth.rate,xlab="DBH",ylab="DBH-ratio",ylim=c(0.9,1.55),col="orange3")
-text(26,1.5,"Control",col="orange3",cex=1.5)
-x<-0:35
-y<-predict(Gr_mod2,list(DBH=x))
-lines(x,y,col="orange3",lwd=3)
-mtext('A',side=3,line=1,at=0.6,cex=2)
 plot(SG_T$DBH,SG_T$Growth.rate,xlab="DBH",ylab="DBH-ratio",ylim=c(0.9,1.55),col="green4")
 text(24,1.5,"Treatment",col="green4",cex=1.5)
 x<-0:35
 y<-predict(Gr_mod4,list(DBH=x))
 lines(x,y,col="green4",lwd=3)
-mtext('B',side=3,line=1,at=0.6,cex=2)          
+mtext('A',side=3,line=1,at=0.6,cex=2)   
+
+plot(SG_C$DBH,SG_C$Growth.rate,xlab="DBH",ylab="DBH-ratio",ylim=c(0.9,1.55),col="orange3")
+text(26,1.5,"Control",col="orange3",cex=1.5)
+x<-0:35
+y<-predict(Gr_mod2,list(DBH=x))
+lines(x,y,col="orange3",lwd=3)
+mtext('B',side=3,line=1,at=0.6,cex=2)
+
+#==> MAIN TEXT, FIGURE 4<====
+# function for computing mean, DS, max and min values
+#note, the correct equation for the 95%SI would be mean+/-SI*t(0.975,n-1)
+min.mean.sd.max <- function(x) {
+  r <- c(min(x), mean(x) - sd(x), mean(x), mean(x) + sd(x), max(x))
+  names(r) <- c("ymin", "lower", "middle", "upper", "ymax")
+  r}
+#excluding the extremes, a zero-ratio makes no sense. 
+#leave the facet_wrap active to see every plot seperately
+p1<-ggplot(data=filter(ScalGrwC, Growth.rate>0.5 & Growth.rate<1.5),aes(x=year,y=Growth.rate))+
+  stat_summary(fun.data = min.mean.sd.max, geom = "boxplot")+
+  geom_jitter(color=rgb(0.9,0.6,0),position=position_jitter(width=.2), size=1)+
+  ggtitle("Control Plots")+
+  #facet_wrap(~Plot,nrow=3)+
+  theme_bw()+ylim(c(0.7,1.5))+
+  theme(axis.text.x=element_text(angle=90))+
+  labs(y="DBH-ratio")
+p2<-ggplot(data=filter(ScalGrwT, Growth.rate>0.5 & Growth.rate<1.5),aes(x=year,y=Growth.rate))+
+  stat_summary(fun.data = min.mean.sd.max, geom = "boxplot")+
+  geom_jitter(color=rgb(0,0.6,0.5), position=position_jitter(width=.2), size=1)+
+  ggtitle("Treatment Plots")+
+  #facet_wrap(~Plot,nrow=3)+
+  theme_bw()+ylim(c(0.7,1.5))+
+  theme(axis.text.x=element_text(angle=90))+
+  labs(y="DBH-ratio")
+windows(11,5)
+ggarrange(p2,p1,labels=c("A","B"),ncol=2,nrow=1)    
 
 # Q1: Does relationship DBH-ratio/DBH, over all datapoints irrespective of plot and year, change with treatment?
 # ANCOVA, full dataset DBH-ratio vs DBH (both continuous) at 2 levels of Treatment
 model1a<-lm(log(Growth.rate)~DBH*as.factor(group),data=Grw.pos)#different slopes PLUS intercepts
-summary.lm(model1a)# TABLE S-5<================
+summary.lm(model1a)# APPENDIX 1, TABLE S-5<================
 
 #Use all data in Linear Mixed Effects Model with bin as Random effect, Treatment as fixed effect. 
 #Q2: does Treatment have an effect on DBH-ratio overall? At this point not interested in "year".
@@ -264,11 +295,12 @@ anova(m2,m2_2,m2_3)#
 #the chosen model; present with REML
 m2_2<-lme(log(Growth.rate)~DBH*group, random=~1+group|year/Plot, data=Grw.pos, method="ML")#a random intecept AND slope for each group
 100*vars/sum(vars)
-summary(m2_2) #TABLE S-6<=====================
+summary(m2_2)
 #also do a lmer to get output and calcualte where the variance in the random components is
 m2_2<-lmer(log(Growth.rate)~DBH*group+(1+group|year/Plot),REML=T, data=Grw.pos)
 vars<-c(0.117,0.0913,0.344,0.0621,0.4429)
 100*vars/sum(vars)
+summary(m2_2)#APPENDIX 1, TABLE S-6<======================
 
 #multiple variance structure doesn't help
 #m2_2b<-lme(log(Growth.rate)~DBH*group, random=~1+group|year/Plot, weights=varIdent(form=~1|year),data=Grw.pos, method="REML")#a random intecept AND slope for each group
@@ -345,14 +377,16 @@ colnames(dat)<-c("Group","Growth","Data")
 dat<-as.data.frame(dat)
 dat$Data<-as.numeric(as.character(dat$Data)) #Note::as above, line 284
 
-#============> Fig.4A&B<==============================================================
+#============> MAIN TEXT, Fig.5A&B<==============================================================
 #don't ggplot it, else it's a pain with Fig.A
-windows(12,5)
+windows(15,6)
 par(mfrow=c(1,2))
-plot(means1,xlab="5cm DBH size bins", ylab="Mean DBH-ratio of growing trees", pch=21, col="black",bg=rgb(0,0.6,0.5),cex=1,ylim=c(1,1.3),lwd=2)
+par(mar=c(6,5,3,1))
+plot(means1,xlab="5cm DBH size bins", ylab="Mean DBH-ratio of growing trees", pch=21, col="black",bg=rgb(0,0.6,0.5),cex=1,ylim=c(1,1.3),lwd=2,xaxt="n")
+axis(1,at=seq(1,6,1), labels=c("SC1\n0-5cm","SC2\n5.1-10cm","SC3\n10.1-15cm","SC4\n15.1-20cm","SC5\n20.1-25cm","SC6\n25.1-30cm"),tick=F)
 arrows(c(1:6),means1-stdevs1,c(1:6),means1+stdevs1,code=3,angle=90,length=0.1,col="green4",lwd=2)
 par(new=T)
-plot(means2,pch=21, xlab="", ylab="", col="black",bg=rgb(0.9,0.6,0),cex=1,ylim=c(1,1.3), lwd=1)
+plot(means2,pch=21, xlab="", ylab="", col="black",bg=rgb(0.9,0.6,0),cex=1,ylim=c(1,1.3), lwd=1,xaxt="n")
 arrows(c(1:6),means2-stdevs2,c(1:6),means2+stdevs2,code=3,angle=90,length=0.1,col=rgb(0.9,0.6,0))
 legend(4.85,1.30,legend=c("Treatment", "Control"),pch=c(16,16),col=c(rgb(0,0.6,0.5),rgb(0.9,0.6,0)))
 mtext('A',side=3,line=1,at=0.2,cex=2)
@@ -360,8 +394,8 @@ mtext('A',side=3,line=1,at=0.2,cex=2)
 plodat<-dat3
 pls1<-sum(plodat[c(1,3,5)])
 pls2<-sum(plodat[c(2,4,6)])
-plotdat<-c(1750/pls1,640/pls1,93/pls1,857/pls2,166/pls2,45/pls2)#the values are rearranged from plodat 
-par(mar=c(5,4,4,2))
+plotdat<-c(1303/pls1,193/pls1,93/pls1,857/pls2,166/pls2,45/pls2)#the values are rearranged from plodat 
+par(mar=c(6,5,3,1))
 barplot(plotdat,col=c(rgb(0,0.6,0.5),rgb(0.9,0.6,0)),ylim=c(0,1),space=c(0.2,0,0.2,0,0.2,0),ylab="Proportion of occurrence")
 legend(5.0,0.9, legend=c("Treatment","Control"),fill=c(rgb(0,0.6,0.5),rgb(0.9,0.6,0)))
 box(lty="solid")
@@ -382,7 +416,7 @@ chisq.test(chidat)
 #what is going on with smallest size bin? 
 #Full Binned dataset including smallest bin
 m4<-lmer(growth.rate~group/bin+(1|year/plot),REML=FALSE,data=Binned_all)#no REML to allow Anova comparison
-summary(m4) # TABLE S-7<=========
+summary(m4) # APPENDIX 1, TABLE S-7<=========
 #Reduced binned dataset; effect still strongest in the smallest bin, now bin 2 
 Binned2<-filter(Binned_all,bin!=1)
 m4<-lmer(growth.rate~group/bin+(1|year/plot),REML=FALSE,data=Binned2)#no REML to allow Anova comparison
@@ -418,15 +452,15 @@ Rel.survivors.p.y.RC<-S.RC$survivors[-1]/S.RC$survivors[-length(S.RC$survivors)]
 Rel.deaths.p.y.RC<-1-Rel.survivors.p.y.RC
 # these are proportions, so the glm error structure is binomial
 Rel_Dead1<-glm(Rel.deaths.p.y.T~Rel.deaths.p.y.RC, family=binomial)
-summary(Rel_Dead1) #table S-8
+summary(Rel_Dead1) #APPENDIX 1, TABLE S-8
 Rel_Dead2<-glm(Rel.deaths.p.y.T[c(1,3,4,5)]~Rel.deaths.p.y.RC[c(1,3,4,5)],family=binomial)
-summary(Rel_Dead2) #table S-9
+summary(Rel_Dead2) #APPENDIX 1, TABLE S-9
 
 #but why glm? A Welch's t-test should do the same trick
 t.test(Rel.survivors.p.y.T,Rel.survivors.p.y.RC)#<- not significant
 
 
-#======> Fig.5 
+#======> MAIN TEXT, FIGURE 6 
 #proportion of deaths each year
 Surv_T<-rep(1,7)-S$survivors[2:8]/S$survivors[1:7]
 Surv_C<-rep(1,7)-S$survivors[10:16]/S$survivors[9:15]
@@ -443,6 +477,9 @@ p4<- ggplot(data=Srv,aes(x=Year,y=PropSurvivors,fill=Group))+geom_col(position="
   theme_bw()+ labs(y="Annual proportion of deceased trees (all plots)",x="Interval during which mortality occurred")+
   scale_fill_manual(values=c(rgb(0,0.6,0.5),rgb(0.9,0.6,0)),labels=c("Treatment","Control"))
 p4
+
+S<-as.data.frame(cbind(as.factor(Srv$Group),Srv$PropSurvivors))
+t.test(S$V2~S$V1)
 
 #Now look at what size most trees are lost, use the wide data for this SCAL
 #first count how many have died, that is seen by turning column Mar19 into 0/1
@@ -473,8 +510,8 @@ D19.RC<-SCAL.RC[which(SCAL.RC$Mar19==0 & SCAL.RC$Feb18!=0),]
 D20.RC<-SCAL.RC[which(SCAL.RC$Mar20==0 & SCAL.RC$Mar19!=0),]
 D21.RC<-SCAL.RC[which(SCAL.RC$Mar21==0 & SCAL.RC$Mar20!=0),]
 
-#======Fig. S-2
-windows(10,10)
+#======APPENDIX 1, FIGURE S2
+windows(12,12)
 par(mfrow=c(4,4))
 h1.T<-hist(D15.T$Feb14,breaks=c(0,5,10,15,20,25,30,35),col=rgb(0,0.6,0.5),ylim=c(0,25),xlab="size classes",main="DBH of trees that died 2014-2015")
 h2.T<-hist(D16.T$Feb15,breaks=c(0,5,10,15,20,25,30,35),col=rgb(0,0.6,0.5),ylim=c(0,25),main="DBH of trees that died 2015-2016",xlab="size classes")
@@ -489,11 +526,10 @@ h3.RC<-hist(D17.RC$Feb16,breaks=c(0,5,10,15,20,25,30,35),col=rgb(0.9,0.6,0),ylim
 h4.RC<-hist(D18.RC$Feb17,breaks=c(0,5,10,15,20,25,30,35),col=rgb(0.9,0.6,0),ylim=c(0,25),main="DBH of trees that died 2017-2018",xlab="size classes")
 h5.RC<-hist(D19.RC$Feb18,breaks=c(0,5,10,15,20,25,30,35),col=rgb(0.9,0.6,0),ylim=c(0,25),main="DBH of trees that died 2018-2019",xlab="size classes")
 h6.RC<-hist(D20.RC$Mar19,breaks=c(0,5,10,15,20,25,30,35),col=rgb(0.9,0.6,0),ylim=c(0,25),main="DBH of trees that died 2019-2020",xlab="size classes")
-h6.RC<-hist(D20.RC$Mar19,breaks=c(0,5,10,15,20,25,30,35),col=rgb(0.9,0.6,0),ylim=c(0,25),main="DBH of trees that died 2019-2020",xlab="size classes")
 h7.RC<-hist(D21.RC$Mar20,breaks=c(0,5,10,15,20,25,30,35),col=rgb(0.9,0.6,0),ylim=c(0,25),main="DBH of trees that died 2020-2021",xlab="size classes")
 
 
-#===> Fig. 6 using a smarter way than what I did above:
+#===> MAIN TEXT, FIGURE 7 using a smarter way than what I did above:
 DBH.pos<-filter(ScalGrw,DBH>0)
 p1<-ggplot(data=filter(DBH.pos, group==1),aes(x=DBH))+
   geom_histogram(binwidth=5,fill=rgb(0,0.6,0.5),color="black",boundary=0)+ylim(0,120)+xlim(0,35)+
@@ -521,16 +557,17 @@ chisq.test(freqs1[1,],freqs2[1,])
 chidat<-matrix(c(107,120,1030,118,135,706),nrow=2,byrow=T)
 chisq.test(chidat)
 
+#obsolete, was turned into a table
 #============PART 4: RECRUITMENT<==========================
-rec2<-read.table("G:/University/PAPERS/E-Pacific/Scalesia/Data/Scalesia_T_allrecruits.txt",header=T)
-rec3<-read.table("G:/University/PAPERS/E-Pacific/Scalesia/Data/Scalesia_C_allrecruits.txt",header=T)
+rec2<-read.table("D:/University/PAPERS/E-Pacific/Scalesia/Data/Scalesia_T_allrecruits.txt",header=T)
+rec3<-read.table("D:/University/PAPERS/E-Pacific/Scalesia/Data/Scalesia_C_allrecruits.txt",header=T)
 
 #Now gather the two sizes into a single column 
 Rec2<-rec2%>%
   gather('Seedling','Sapling','Tree1','Tree2','Tree3','Tree4',key="Rec.Size",value="Number")
 Rec3<-rec3%>%
   gather('Seedling','Sapling','Tree1','Tree2','Tree3','Tree4',key="Rec.Size",value="Number")
-#========> Fig. 7 <==============================================
+#========> OBSOLETE FIGURE, but nice...is now a table <==============================================
 p7a<- ggplot(data=Rec2, aes(x=Rec.Size,y=Number,fill=Rec.Size))+geom_col(color="black")+
   facet_wrap(~Year,nrow=1)+theme_bw()+ labs(y="Total count of recruits (all TREATMENT plots)",x="Recruit size-classes")+
   scale_x_discrete(limits=c("Seedling","Sapling","Tree1","Tree2","Tree3","Tree4"))+
@@ -553,13 +590,16 @@ ggarrange(p7a,p7b,labels=c("A","B"),ncol=1,nrow=2)
 surv_dat=as.data.frame(cbind(seq(1:6),c(1,0.3,0.1,0.2,0.2,0.02)))
 colnames(surv_dat)<-c("size.class","frequency")
 
-# ==========> Fig. 8<=====================================
+# ==========> MAIN TEXT, FIGURE 8<=====================================
 p1<-ggplot(surv_dat,aes(x=size.class,y=frequency))+geom_point(shape=21,fill="green4",size=5)+
   theme_bw()+
-  geom_smooth(fullrange=T,method="lm", formula=(y~exp(-x)),se=T,level=0.95,color=1,breaks=6)+
-  scale_x_continuous(breaks=c(1:6))+
-  labs(y="Proportional frequency of Size Class 1", x="Size class")
+  geom_smooth(fullrange=T,method="lm", formula=(y~exp(-x)),se=T,level=0.95,color=1)+
+  scale_x_continuous(breaks=c(1:6),labels=c("1"="Seedling\n0-200cm","2"="Sapling\n201-400cm","3"="Tree1\n401-500cm","4"="Tree2\n501-600cm","5"="Tree3\n601-700cm","6"="Tree4\n701-800cm"))+
+  labs(y="Proportional frequency of Size Class 1", x="Size class")+
+  #scale_x_discrete(labels=labls)
 windows(10,5)
 p1
+
+
 
 
