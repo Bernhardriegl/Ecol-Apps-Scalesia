@@ -28,7 +28,7 @@ library(lme4)
 library(MuMIn)
 
 #PART 1: GROWTH MODEL FOR SCALESIA PEDUNCULATA
-setwd("E:/University/PAPERS/E-Pacific/Scalesia/Data/")
+setwd("set your file path here")
 DBH<-read.table("Scalesia_DBF-TH.txt",header=T) # DBH and Height at random locations in forest prior to beginning of experiment in 2014
 DBH_Treat<-read.table("Scalesia-DBH-Height_Treatment.txt",header=T)# BH and Height of haphazardly chosen thees in Treatment plots in 2020 (Rubus removed)
 DBH_Control<-read.table("Scalesia-DBH-Height_Control.txt",header=T)# BH and Height of haphazardly chosen thees in Control plots in 2020 (Rubus present)
@@ -77,7 +77,7 @@ bv3<-predict(model3,list(DBH_cm=av))
 bv4<-predict(model4,list(DBH_cm=av))
 bv5<-predict(model5,list(DBH_cm=av))
 bv6<-predict(model6,list(DBH_cm=av))
-#setwd("to wherever you want the png to go")
+setwd("to wherever you want the png to go")
 png("Fig_2.png",width=8.5,height=4.25,units='cm',res=450)
 par(mar=c(2,1.8,1.5,0.5)+0.1)
 par(cex.lab=0.25,cex=0.7,cex.sub=0.7,cex.axis=0.5)
@@ -312,7 +312,6 @@ dev.off()
 #==> MAIN TEXT, FIGURE 4<====
 # function for computing mean, DS, max and min values
 #note, the correct equation for the 95%SI would be mean+/-SI*t(0.975,n-1)
-setwd("E:/University/PAPERS/E-Pacific/Scalesia/Submission_Final/")
 
 min.mean.sd.max <- function(x) {
   r <- c(min(x), mean(x) - sd(x), mean(x), mean(x) + sd(x), max(x))
@@ -338,9 +337,7 @@ p2<-ggplot(data=filter(ScalGrwT, Growth.rate>0.5 & Growth.rate<1.5),aes(x=year,y
   theme_bw(base_size=14)+ylim(c(0.7,1.5))+
   theme(axis.text.x=element_text(angle=90,size=14,colour="black"),axis.text.y=element_text(size=14,colour="black"))+
   labs(y="DBH-ratio",x="Sampling year")
-windows(25,12)
 p3<-ggarrange(p2,p1,labels=c("A","B"),font.label=list(size=28,color="black"),ncol=2,nrow=1) 
-p3
 ggsave("Fig_4.png",p3,width=8.5,height=5,dpi=450)
 
 # Q1: Does relationship DBH-ratio/DBH, over all data points irrespective of plot and year, change with treatment?
@@ -559,10 +556,8 @@ p2<-ggplot(data=filter(DBH.pos, group==2),aes(x=DBH))+
   theme_bw()+theme(axis.text.x=element_text(angle=90,size=11,colour="black"),axis.text.y=element_text(size=11,colour="black"))+
   labs(y="Count",x="DBH-size-classes")+theme(axis.title=element_text(size=12))+
   theme(strip.text.x=element_text(size=13,color="black",face="bold"),panel.grid.major=element_blank(),panel.grid.minor=element_blank())
-windows(10,10)
 p5<-ggarrange(p1,p2,labels=c("A","B"),font.label=list(size=20,color="black"),ncol=1,nrow=2)
 ggsave("Fig_7.png",p5,width=8.5,dpi=450)
-p5
 
 #now extract the data from the ggplot
 dat1<-ggplot_build(p1)
@@ -591,8 +586,6 @@ p1<-ggplot(surv_dat,aes(x=size.class,y=frequency))+geom_point(shape=21,fill="gre
   theme(axis.title=element_text(size=14))
   #scale_x_discrete(labels=labls)
 ggsave("Fig_8.png",p1,width=8.5,dpi=450)
-windows(10,5)
-p1
 
 # ============= time-lag towards extinction=============
 #use Crowley's survivor function (exp(-t/mu)) to explore how long a population without recruits will last, mu=fraction of those who die 1/deaths, so 
