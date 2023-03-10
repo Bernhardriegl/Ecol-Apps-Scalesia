@@ -1,9 +1,10 @@
-#VERSION FOR SUBMISSION
-#Scalesia_file; Bernhard Riegl, started on 5/27/2019, first submitted 3/21/21; fixed, updated and cleaned by 10/19/21
-#resubmitted 11/4/2021, modified after review 1/10/2022 and  check 3/30/2022
-# next change for resubmission 8/9/2022: added DBH analyses, nLMEr and filepath simplification, the last version of 11/23/2022
+# VERSION FOR SUBMISSION
+# Scalesia_file; Bernhard Riegl, started on 5/27/2019, first submitted 3/21/21; fixed, updated and cleaned by 10/19/21
+# resubmitted 11/4/2021, modified after review 1/10/2022 and checked 3/30/2022
+# next change for resubmission 8/9/2022: added DBH analyses, nLMEr and filepath simplification as of 11/23/2022
+# accepted paper version 3/10/2023
 
-#Map of the Galapagos for MAIN TEXT FIGURE 1
+#Map of the Galapagos for MAIN TEXT FIGURE 1, the final publication figure built by Anna Walentowitz
 library(maps)
 library(marmap)
 library(mapproj)
@@ -19,7 +20,7 @@ plot(Gal, image = TRUE, land = TRUE, lwd = 0.005,col="grey",axes=FALSE,xlab="",y
 plot(Gal, deep = 0, shallow=0, step=0,lwd=2,col="grey50",add=TRUE)
 
 #now for the Scalesia data and their evaluation
-#1=Treatment, 2=Control
+#1=Rubus removed (Treatment), 2=Rubus present (Control)
 library(tidyverse)
 library(ggpubr)
 library(nlme)
@@ -27,10 +28,10 @@ library(lme4)
 library(MuMIn)
 
 #PART 1: GROWTH MODEL FOR SCALESIA PEDUNCULATA
-setwd("D:/University/PAPERS/E-Pacific/Scalesia/Data/")
+setwd("E:/University/PAPERS/E-Pacific/Scalesia/Data/")
 DBH<-read.table("Scalesia_DBF-TH.txt",header=T) # DBH and Height at random locations in forest prior to beginning of experiment in 2014
 DBH_Treat<-read.table("Scalesia-DBH-Height_Treatment.txt",header=T)# BH and Height of haphazardly chosen thees in Treatment plots in 2020 (Rubus removed)
-DBH_Control<-read.table("Scalesia-DBH-Height_Control.txt",header=T)# BH and Height of haphazardly chosen thees in Control plots in 2020 (Rubus remains)
+DBH_Control<-read.table("Scalesia-DBH-Height_Control.txt",header=T)# BH and Height of haphazardly chosen thees in Control plots in 2020 (Rubus present)
 
 # calculated for the first DBH dataset, taken from random spots within forest IN 2014
 # calculate the parameters for the non-linear model, which is y=a-b*exp(-cx)
@@ -70,26 +71,34 @@ t.test(DBH_Treat$DBH_cm,DBH_Control$DBH_cm)
 t.test(DBH_Treat$Height_cm,DBH_Control$Height_cm)
 
 #=====MAIN TEXT, FIGURE 2=====
+
 av<-seq(0,30,0.29)
 bv3<-predict(model3,list(DBH_cm=av))
 bv4<-predict(model4,list(DBH_cm=av))
 bv5<-predict(model5,list(DBH_cm=av))
 bv6<-predict(model6,list(DBH_cm=av))
-windows(10,5)
-plot(DBH$DBH_cm,DBH$Height_cm,pch=21,col="blue",bg="blue",xlab="DBH in cm",ylab="Height in cm",xlim=c(0,30),ylim=c(0,1000))
+#setwd("to wherever you want the png to go")
+png("Fig_2.png",width=8.5,height=4.25,units='cm',res=450)
+par(mar=c(2,1.8,1.5,0.5)+0.1)
+par(cex.lab=0.25,cex=0.7,cex.sub=0.7,cex.axis=0.5)
+plot(DBH$DBH_cm,DBH$Height_cm,pch=1,col="blue",bg="blue",cex=0.7,xlim=c(0,30),ylim=c(0,1100),axes=F,frame=T)
 #lines(av,bv1,col="blue",lwd=2,lty=2)
 lines(av,bv2,col="blue",lwd=2)
-text(27.5,1000, "pre-experiment - 2014", col="blue")
+text(27.5,1000, "pre-experiment - 2014", col="blue",cex=0.5)
 par(new=T)
-plot(DBH_Treat$DBH_cm,DBH_Treat$Height_cm,pch=21,col=rgb(0,0.6,0.5),bg=rgb(0,0.6,0.5),xlab="DBH in cm",ylab="Height in cm",xlim=c(0,30),ylim=c(0,1000))
+plot(DBH_Treat$DBH_cm,DBH_Treat$Height_cm,pch=1,col=rgb(0,0.6,0.5),bg=rgb(0,0.6,0.5),cex=0.7,xlim=c(0,30),ylim=c(0,1100),axes=F,frame=T)
 lines(av,bv3,col=rgb(0,0.6,0.5),lwd=2)
 lines(av,bv4,col=rgb(0,0.6,0.5))
-text(27,850,expression(paste(italic('R. niveus')," removed - 2020")),col=rgb(0,0.6,0.5))
+text(27,850,expression(paste(italic('R. niveus')," removed - 2020")),col=rgb(0,0.6,0.5),cex=0.5)
 par(new=T)
-plot(DBH_Control$DBH_cm,DBH_Control$Height_cm,pch=21,col=rgb(0.9,0.6,0),bg=rgb(0.9,0.6,0),xlab="DBH in cm",ylab="Height in cm",xlim=c(0,30),ylim=c(0,1000))
+plot(DBH_Control$DBH_cm,DBH_Control$Height_cm,pch=1,col=rgb(0.9,0.6,0),bg=rgb(0.9,0.6,0),cex=0.7,xlim=c(0,30),ylim=c(0,1100),axes=F,frame=T)
 lines(av,bv5,col=rgb(0.9,0.6,0),lwd=2)
 lines(av,bv6,col=rgb(0.9,0.6,0))
-text(27,700,expression(paste(italic('R. niveus')," present - 2020")),col=rgb(0.9,0.6,0))
+text(27,700,expression(paste(italic('R. niveus')," present - 2020")),col=rgb(0.9,0.6,0),cex=0.5)
+axis(1,seq(0,30,5),labels=c(0,5,10,15,20,25,30),tck=-0.05,mgp=c(1,0.1,0))
+axis(2,seq(0,1000,200),labels=c(0,200,400,600,800,1000),tck=-0.03,mgp=c(1,0.4,0),las=1)
+title(ylab="Height (cm)",xlab="DBH (cm)",mgp=c(1.1,0.5,0),cex.lab=0.7)
+dev.off()
 
 #Step 1: pool data from all plots and see if there is a difference pre/post experiment and Treatment/Control  w.r.t. height and DBH
 DB.H=cbind(rep(1,dim(DBH)[1]),rep(1,dim(DBH)[1]),DBH);colnames(DB.H)<-c("Phase","Group","DBH","Height") #before experiment
@@ -227,6 +236,7 @@ start2<-list(alpha = alpha.0, beta = beta.0)
 Gr_mod4 <- nls(Growth.rate ~ alpha * exp(beta * DBH) + theta , data = SG_C, start = start1)
 Gr_mod5 <- nls(Growth.rate ~ alpha * exp(beta * DBH) , data = SG_C, start = start2)
 anova(Gr_mod4,Gr_mod5)#model simplification not justified, keep theta or model is signifcantly worse
+AIC(Gr_mod3,Gr_mod4)
 
 #==> APPENDIX 1, FIGURE S2 <====
 # function for computing mean, DS, max and min values
@@ -273,25 +283,37 @@ windows(25,20)
 ggarrange(p1,p2,p3,p4,labels=c("A","B","C","D"),ncol=2,nrow=2)
 
 # ====> MAIN TEXT, Figure 3  <========
-windows(11,5)
+#setwd("to wherever you want the png to go")
+png("Fig_3.png",width=8.5,height=4,units='cm',res=450)
 par(mfrow=c(1,2))
-plot(SG_T$DBH,SG_T$Growth.rate,xlab="DBH",ylab="DBH-ratio",ylim=c(0.9,1.55),col="green4")
-text(22.8,1.5,expression(paste(italic('R. niveus')," removed")),col="green4",cex=1.5)
-x<-0:35
+par(mar=c(2,1.5,1.5,0.5)+0.1)
+par(cex.lab=0.25,cex=0.7,cex.sub=0.7,cex.axis=0.5)
+plot(SG_T$DBH,SG_T$Growth.rate,xlab="",ylab="",ylim=c(0.9,1.55),xlim=c(0,30),col=rgb(0,0.6,0.5),cex=0.5,mgp=c(0.1,0.3,0),axes=F,frame=T)
+title(ylab="DBH-ratio",mgp=c(1,0.3,0),cex.lab=0.6,xlab="DBH (cm)")
+axis(1,seq(0,30,5),labels=c(0,5,10,15,20,25,30),tck=-0.05,mgp=c(1,0.1,0))
+axis(2,seq(0.9,1.5,0.1),labels=c(0.9,1,1.1,1.2,1.3,1.4,1.5),tck=-0.05,mgp=c(1,0.4,0),las=1)
+text(22.8,1.5,expression(paste(italic('R. niveus')," removed")),col=rgb(0,0.6,0.5),cex=0.6)
+x<-0:30
 y<-predict(Gr_mod4,list(DBH=x))
-lines(x,y,col="green4",lwd=3)
-mtext('A',side=3,line=1,at=0.6,cex=2)   
+lines(x,y,col=rgb(0,0.6,0.5),lwd=3)
+mtext('A',side=3,line=0,at=-4,cex=0.75)  
 
-plot(SG_C$DBH,SG_C$Growth.rate,xlab="DBH",ylab="DBH-ratio",ylim=c(0.9,1.55),col="orange3")
-text(23.6,1.5,expression(paste(italic('R. niveus')," present")),col="orange3",cex=1.5)
-x<-0:35
+plot(SG_C$DBH,SG_C$Growth.rate,xlab="",ylab="",ylim=c(0.9,1.55),xlim=c(0,30),col="orange3",cex=0.5,mgp=c(0.1,0.3,0),axes=F,frame=T)
+title(ylab="DBH-ratio",xlab="DBH (cm)",mgp=c(1,0.3,0),cex.lab=0.6)
+axis(1,seq(0,30,5),labels=c(0,5,10,15,20,25,30),tck=-0.05,mgp=c(1,0.1,0))
+axis(2,seq(0.9,1.5,0.1),labels=c(0.9,1,1.1,1.2,1.3,1.4,1.5),tck=-0.05,mgp=c(1,0.4,0),las=1)
+text(23.6,1.5,expression(paste(italic('R. niveus')," present")),col="orange3",cex=0.6)
+x<-0:30
 y<-predict(Gr_mod2,list(DBH=x))
 lines(x,y,col="orange3",lwd=3)
-mtext('B',side=3,line=1,at=0.6,cex=2)
+mtext('B',side=3,line=0,at=-4,cex=0.75)
+dev.off()
 
 #==> MAIN TEXT, FIGURE 4<====
 # function for computing mean, DS, max and min values
 #note, the correct equation for the 95%SI would be mean+/-SI*t(0.975,n-1)
+setwd("E:/University/PAPERS/E-Pacific/Scalesia/Submission_Final/")
+
 min.mean.sd.max <- function(x) {
   r <- c(min(x), mean(x) - sd(x), mean(x), mean(x) + sd(x), max(x))
   names(r) <- c("ymin", "lower", "middle", "upper", "ymax")
@@ -302,20 +324,24 @@ p1<-ggplot(data=filter(ScalGrwC, Growth.rate>0.5 & Growth.rate<1.5),aes(x=year,y
   stat_summary(fun.data = min.mean.sd.max, geom = "boxplot")+
   geom_jitter(color=rgb(0.9,0.6,0),position=position_jitter(width=.2), size=1)+
   ggtitle(c(expression(italic("R. niveus")*" present")))+
+  scale_x_discrete(labels=c("2014","2015","2016","2017","2018","2019","2020"))+
   #facet_wrap(~Plot,nrow=3)+
-  theme_bw()+ylim(c(0.7,1.5))+
-  theme(axis.text.x=element_text(angle=90))+
-  labs(y="DBH-ratio")
+  theme_bw(base_size=14)+ylim(c(0.7,1.5))+
+  theme(axis.text.x=element_text(angle=90,size=14,colour="black"),axis.text.y=element_text(size=14,colour="black"))+
+  labs(y="DBH-ratio",x="Sampling year")
 p2<-ggplot(data=filter(ScalGrwT, Growth.rate>0.5 & Growth.rate<1.5),aes(x=year,y=Growth.rate))+
   stat_summary(fun.data = min.mean.sd.max, geom = "boxplot")+
   geom_jitter(color=rgb(0,0.6,0.5), position=position_jitter(width=.2), size=1)+
   ggtitle(c(expression(italic("R. niveus")*" removed")))+
+  scale_x_discrete(labels=c("2014","2015","2016","2017","2018","2019","2020"))+
   #facet_wrap(~Plot,nrow=3)+
-  theme_bw()+ylim(c(0.7,1.5))+
-  theme(axis.text.x=element_text(angle=90))+
-  labs(y="DBH-ratio")
-windows(25,15)
-ggarrange(p2,p1,labels=c("A","B"),ncol=2,nrow=1)    
+  theme_bw(base_size=14)+ylim(c(0.7,1.5))+
+  theme(axis.text.x=element_text(angle=90,size=14,colour="black"),axis.text.y=element_text(size=14,colour="black"))+
+  labs(y="DBH-ratio",x="Sampling year")
+windows(25,12)
+p3<-ggarrange(p2,p1,labels=c("A","B"),font.label=list(size=28,color="black"),ncol=2,nrow=1) 
+p3
+ggsave("Fig_4.png",p3,width=8.5,height=5,dpi=450)
 
 # Q1: Does relationship DBH-ratio/DBH, over all data points irrespective of plot and year, change with treatment?
 # REMOVE # APPENDIX 1, TABLE S-5<================
@@ -339,7 +365,7 @@ m2_1a<-lme(log(Growth.rate)~DBH*group, random=~1+group|Plot, data=growth, method
 anova(m2_1a,m2_1b,m2_1c,m2_1d,m2_1e)
 
 #Pinheiro and Bates p. 19 "the overall effect of the factor should be assessed with anova, not by t-values of p assoc. with fixed-effect params"
-anova(m2_1a) #Appendix: Table S8======
+anova(m2_1a) #Appendix: Table S7======
 plot(m2_1a,form=resid(.,type="p")~fitted(.)|Plot,abline=0) #[Pinheiro and Bates (2000)p.21]; Appendix Figure S3=====
 
 #the chosen model is m2_1a; present with REML, for different output tables once with "lme" and once with "lmer"
@@ -351,8 +377,8 @@ r.squaredGLMM(m2_2)
 #also do a lmer to get output and calculate where the variance in the random components is (Crowley, p. 704)
 mod2_2aa<-lmer(log(Growth.rate)~DBH+group+(1+group|Plot),REML=T, data=growth)
 #mod2_2aa<-lmer(log(Growth.rate)~DBH+group+(1|year),REML=T, data=Grw.pos)#random intercept only
-summary(mod2_2aa)#APPENDIX 1, TABLE S-7<======================
-vars<-c(0.11,0.04,0.54) #these are the fixed effects from S7 REML table
+summary(mod2_2aa)
+vars<-c(0.11,0.004,0.0054) #these are the fixed effects from REML table
 100*vars/sum(vars)
 r.squaredGLMM(mod2_2aa)#R2m marginal R2=fixed effects; R2C=conditional, combined fixed and random effects explain X% of variance
 
@@ -382,16 +408,21 @@ dat$Data<-as.numeric(as.character(dat$Data)) #Note::as above, line 284
 
 #============> MAIN TEXT, Fig.5<==============================================================
 #more fast growers in Treatment....but were there in general more trees? Change to percentage of total
-windows(12,10)
 plodat<-dat3
 pls1<-sum(plodat[c(1,3,5)])
 pls2<-sum(plodat[c(2,4,6)])
 plotdat<-c(1303/pls1,193/pls1,93/pls1,857/pls2,166/pls2,45/pls2)#the values are rearranged from plodat 
-par(mar=c(6,5,3,1))
-barplot(plotdat,col=c(rgb(0,0.6,0.5),rgb(0.9,0.6,0)),ylim=c(0,1),space=c(0.2,0,0.2,0,0.2,0),ylab="Proportion of occurrence")
-legend(4.7,0.9, legend=c(expression(italic("R. niveus")*" removed"), expression(italic("R. niveus")*" present")),fill=c(rgb(0,0.6,0.5),rgb(0.9,0.6,0)))
+
+png("Fig_5.png",width=8.5,height=5,units='cm',res=450)
+par(mar=c(3.6,4,1.5,0.5)+0.1)
+par(cex.lab=0.8,cex=0.7,cex.sub=0.7,cex.axis=0.6)
+barplot(plotdat,col=c(rgb(0,0.6,0.5),rgb(0.9,0.6,0)),ylim=c(0,1),space=c(0.2,0,0.2,0,0.2,0),axes=F)
+legend(4.7,0.9, legend=c(expression(italic("R. niveus")*" removed"), expression(italic("R. niveus")*" present")),fill=c(rgb(0,0.6,0.5),rgb(0.9,0.6,0)),cex=0.6,bty="n")
 box(lty="solid")
-text(c(1.3,3.5,5.5),par("usr")[3]-0.02,srt=45,adj=1,labels=c("Fast Growth","Negative Growth","Zero Growth"),xpd=T)
+text(c(1.3,3.5,5.5),par("usr")[3]-0.02,srt=45,adj=1,labels=c("Fast growth","Negative growth","Zero growth"),xpd=T,cex=0.8)
+title(ylab="Proportion of occurrance",mgp=c(1.7,1.2,0))
+axis(2,seq(0,1,0.2),labels=c(0,0.2,0.4,0.6,0.8,1),tck=-0.02,mgp=c(1.5,0.4,0),las=1)
+dev.off()
 
 #now test what is seen in Fig. 5
 chidat<-matrix(c(93,640,1750,45,166,875),nrow=2,byrow=T)
@@ -456,9 +487,14 @@ Srv$PropSurvivors<-as.numeric(as.character(Srv$PropSurvivors))
 
 windows(10,4)
 p4<- ggplot(data=Srv,aes(x=Year,y=PropSurvivors,fill=Group))+geom_col(position="dodge",color="black")+
-  theme_bw()+ labs(y="Annual proportion of deceased trees (all plots)",x="Interval during which mortality occurred")+
-  scale_fill_manual(values=c(rgb(0,0.6,0.5),rgb(0.9,0.6,0)),labels=c(c(expression(italic("R. niveus")*" removed")),c(expression(italic("R. niveus")*" present"))))
+  theme_bw(base_size=14)+ 
+  scale_y_continuous(limits=c(0.,0.40),expand=c(0,0))+
+  labs(y="Annual proportion of deceased \n trees (all plots)",x="Interval during which mortality occurred")+
+  theme(axis.text.x=element_text(size=14,colour="black"),axis.text.y=element_text(size=14,colour="black"))+
+  scale_fill_manual(values=c(rgb(0,0.6,0.5),rgb(0.9,0.6,0)),labels=c(c(expression(italic("R. niveus")*" removed")),c(expression(italic("R. niveus")*" present"))))+
+  theme(legend.position=c(0.8,0.8),panel.grid.major=element_blank(),panel.grid.minor=element_blank(),legend.title=element_blank())
 p4
+ggsave("Fig_6.png",p4,width=8.5,dpi=450)
 
 
 #Now look at what size most trees are lost, use the wide data for this SCAL
@@ -511,16 +547,22 @@ h7.RC<-hist(D21.RC$Mar20,breaks=c(0,5,10,15,20,25,30,35),col=rgb(0.9,0.6,0),ylim
 
 #===> MAIN TEXT, FIGURE 7 using a smarter way than what I did above:
 DBH.pos<-filter(ScalGrw,DBH>0)
-p1<-ggplot(data=filter(DBH.pos, group==1),aes(x=DBH))+
+p1<-  ggplot(data=filter(DBH.pos, group==1),aes(x=DBH))+
   geom_histogram(binwidth=5,fill=rgb(0,0.6,0.5),color="black",boundary=0)+ylim(0,120)+xlim(0,35)+
-  facet_wrap(~year,nrow=2)+ theme(axis.text.x=element_text(angle=90))+
-  labs(y="Count",x="DBH-size-classes")+theme_bw()
+  facet_wrap(~year,nrow=2,labeller=labeller(year=c("Feb14"="2014","Feb15"="2015","Feb16"="2016","Feb17"="2017","Feb18"="2018","Mar19"="2019","Mar20"="2020","Mar21"="2021")))+
+  theme_bw()+ theme(axis.text.x=element_text(angle=90,size=11,colour="black"),axis.text.y=element_text(size=11,colour="black"))+
+  labs(y="Count",x="DBH-size-classes")+theme(axis.title=element_text(size=12))+
+  theme(strip.text.x=element_text(size=13,color="black",face="bold"),panel.grid.major=element_blank(),panel.grid.minor=element_blank())
 p2<-ggplot(data=filter(DBH.pos, group==2),aes(x=DBH))+
   geom_histogram(binwidth=5,fill=rgb(0.9,0.6,0),color="black",boundary=0)+ylim(0,120)+
-  facet_wrap(~year,nrow=2)+ theme(axis.text.x=element_text(angle=90))+
-  labs(y="Count",x="DBH-size-classes")+theme_bw()
+  facet_wrap(~year,nrow=2,labeller=labeller(year=c("Feb14"="2014","Feb15"="2015","Feb16"="2016","Feb17"="2017","Feb18"="2018","Mar19"="2019","Mar20"="2020","Mar21"="2021")))+
+  theme_bw()+theme(axis.text.x=element_text(angle=90,size=11,colour="black"),axis.text.y=element_text(size=11,colour="black"))+
+  labs(y="Count",x="DBH-size-classes")+theme(axis.title=element_text(size=12))+
+  theme(strip.text.x=element_text(size=13,color="black",face="bold"),panel.grid.major=element_blank(),panel.grid.minor=element_blank())
 windows(10,10)
-ggarrange(p1,p2,labels=c("A","B"),ncol=1,nrow=2)
+p5<-ggarrange(p1,p2,labels=c("A","B"),font.label=list(size=20,color="black"),ncol=1,nrow=2)
+ggsave("Fig_7.png",p5,width=8.5,dpi=450)
+p5
 
 #now extract the data from the ggplot
 dat1<-ggplot_build(p1)
@@ -545,11 +587,13 @@ p1<-ggplot(surv_dat,aes(x=size.class,y=frequency))+geom_point(shape=21,fill="gre
   geom_smooth(fullrange=T,method="lm", formula=(y~exp(-x/1.14)),se=T,level=0.95,color=1)+
   scale_x_continuous(breaks=c(1:6),labels=c("1"="Seedling\n0-200cm","2"="Sapling\n201-400cm","3"="Tree1\n401-500cm","4"="Tree2\n501-600cm","5"="Tree3\n601-700cm","6"="Tree4\n701-800cm"))+
   labs(y="Prop. frequency of previous height class", x="Height class")+
+  theme(axis.text.x=element_text(size=13,colour="black"),axis.text.y=element_text(size=13,colour="black"))+
+  theme(axis.title=element_text(size=14))
   #scale_x_discrete(labels=labls)
+ggsave("Fig_8.png",p1,width=8.5,dpi=450)
 windows(10,5)
 p1
 
 # ============= time-lag towards extinction=============
 #use Crowley's survivor function (exp(-t/mu)) to explore how long a population without recruits will last, mu=fraction of those who die 1/deaths, so 
 # this is the wellknown N(t)-N(0)*exp(rt), only expressed as exp(t*-proportion of deaths)
-
