@@ -2,7 +2,7 @@
 # Scalesia_file; Bernhard Riegl, started on 5/27/2019, first submitted 3/21/21; fixed, updated and cleaned by 10/19/21
 # resubmitted 11/4/2021, modified after review 1/10/2022 and checked 3/30/2022
 # next change for resubmission 8/9/2022: added DBH analyses, nLMEr and filepath simplification as of 11/23/2022
-# accepted paper version 3/10/2023
+# accepted paper version 3/10/2023, errors cleaned 3/13/2023;
 
 #Map of the Galapagos for MAIN TEXT FIGURE 1, the final publication figure built by Anna Walentowitz
 library(maps)
@@ -28,7 +28,7 @@ library(lme4)
 library(MuMIn)
 
 #PART 1: GROWTH MODEL FOR SCALESIA PEDUNCULATA
-setwd("set your file path here")
+setwd("D:/University/PAPERS/E-Pacific/Scalesia/Data/")
 DBH<-read.table("Scalesia_DBF-TH.txt",header=T) # DBH and Height at random locations in forest prior to beginning of experiment in 2014
 DBH_Treat<-read.table("Scalesia-DBH-Height_Treatment.txt",header=T)# BH and Height of haphazardly chosen thees in Treatment plots in 2020 (Rubus removed)
 DBH_Control<-read.table("Scalesia-DBH-Height_Control.txt",header=T)# BH and Height of haphazardly chosen thees in Control plots in 2020 (Rubus present)
@@ -71,13 +71,12 @@ t.test(DBH_Treat$DBH_cm,DBH_Control$DBH_cm)
 t.test(DBH_Treat$Height_cm,DBH_Control$Height_cm)
 
 #=====MAIN TEXT, FIGURE 2=====
-
 av<-seq(0,30,0.29)
 bv3<-predict(model3,list(DBH_cm=av))
 bv4<-predict(model4,list(DBH_cm=av))
 bv5<-predict(model5,list(DBH_cm=av))
 bv6<-predict(model6,list(DBH_cm=av))
-setwd("to wherever you want the png to go")
+#setwd("to wherever you want the png to go")
 png("Fig_2.png",width=8.5,height=4.25,units='cm',res=450)
 par(mar=c(2,1.8,1.5,0.5)+0.1)
 par(cex.lab=0.25,cex=0.7,cex.sub=0.7,cex.axis=0.5)
@@ -192,53 +191,48 @@ Scal2<-SCAL%>%
   gather('Feb14','Feb15','Feb16','Feb17','Feb18','Mar19','Mar20','Mar21',key="year",value="DBH")
 #========THIS IS THE DBH-ratio=======================================
 ScalGrw2<-left_join(Scal2,Grw2)
+#=========data for FIGURE 3 MAIN TEXT====================================
+#relationship of Growth ratio against DBH is calculated over all data
+Scal_Grw<-filter(ScalGrw2, year!="Mar21")
+Scal_Grw[is.na(Scal_Grw)]<-0
+Scal_Grw[Scal_Grw==Inf]<-0
+SG<-Scal_Grw[-which(Scal_Grw$Growth.rate==0),]#eliminate outliers and zeros
+#SG<-SG[-which(SG$Growth.rate>1.7),]#eliminate one outlier
 
-#=========data for FIGURE 4 MAIN TEXT====================================
+#DHB-ratio with diameter as second-order polynomial in main text
+# APPENDIX 1, TABLE S-5 and main text Table 2
+Gr_mod1<-lm(Growth.rate~poly(DBH,2),data=SG)
+summary.lm(Gr_mod1)
+summary.aov(Gr_mod1)
+#or fit exponential decay
+# Select an approximate $\theta$, since theta must be lower than min(y), and greater than zero
+theta.0 <- min(SG$Growth.rate) * 0.5  
+# Estimate the rest parameters using a linear model. Note: this concerns only the pooled DBH values overall; not year, plot, etc...
+model.0 <- lm(log(Growth.rate - theta.0) ~ DBH, data=SG)  
+alpha.0 <- exp(coef(model.0)[1])
+beta.0 <- coef(model.0)[2]
+# Starting parameters
+start <- list(alpha = alpha.0, beta = beta.0, theta = theta.0)
+start2<-list(alpha = alpha.0, beta = beta.0)
+#if error is additive, then it is constant with x-axis and we should not use log-scale
+Gr_mod2 <- nls(Growth.rate ~ alpha * exp(beta * DBH) + theta , data = SG, start = start,control = nls.control(maxiter = 1000))
+Gr_mod2b<- nls(Growth.rate ~ alpha * exp(beta * DBH), data = SG, start = start2)
+anova(Gr_mod2,Gr_mod2b)
+summary(Gr_mod2)
+#lines(SG_C$DBH,predict(Gr_mod5,list(x=SG_C$DBH)),col='skyblue',lwd=3)
+AIC(Gr_mod2,Gr_mod1)
+
+#==> APPENDIX 1, FIGURE S2 <===
+#separate evaluation of DBH-ratios in plots with/without R. niveus
 ScalGrwT<-filter(ScalGrw2,group==1 & year!="Mar21")#TREATMENT
-ScalGrwC<-filter(ScalGrw2,group==2 & year!="Mar21")#WITH RUBUS CONTROL
-#there are many NAs and zeros in there, they make no sense as growth rate
+ScalGrwC<-filter(ScalGrw2,group==2 & year!="Mar21")#WITH RUBUS = CONTROL
+#there are many NAs and Infs in there, they make no sense as growth rate
 ScalGrwT[is.na(ScalGrwT)]<-0
 ScalGrwC[is.na(ScalGrwC)]<-0
 ScalGrwT[ScalGrwT==Inf]<-0
 ScalGrwC[ScalGrwC==Inf]<-0
 SG_T<-ScalGrwT[-which(ScalGrwT$Growth.rate==0),]
 SG_C<-ScalGrwC[-which(ScalGrwC$Growth.rate==0),]
-
-#Relationship of DHB-ratio with diameter as second-order polynomial in main text
-# APPENDIX 1, TABLE S-6
-Gr_mod1<-lm(Growth.rate~poly(DBH,2),data=SG_C)
-summary.lm(Gr_mod1)
-summary.aov(Gr_mod1)
-#or fit exponential decay
-# Select an approximate $\theta$, since theta must be lower than min(y), and greater than zero
-theta.0 <- min(SG_C$Growth.rate) * 0.5  
-# Estimate the rest parameters using a linear model. Note: this concerns only the pooled DBH values overall; not year, plot, etc...
-model.0 <- lm(log(Growth.rate - theta.0) ~ DBH, data=SG_C)  
-alpha.0 <- exp(coef(model.0)[1])
-beta.0 <- coef(model.0)[2]
-# Starting parameters
-start <- list(alpha = alpha.0, beta = beta.0, theta = theta.0)
-#if error is additive, then it is constant with x-axis and we should not use log-scale
-Gr_mod2 <- nls(Growth.rate ~ alpha * exp(beta * DBH) + theta , data = SG_C, start = start)
-summary(Gr_mod2)
-#lines(SG_C$DBH,predict(Gr_mod5,list(x=SG_C$DBH)),col='skyblue',lwd=3)
-AIC(Gr_mod2,Gr_mod1)
-
-Gr_mod3<-lm(Growth.rate~poly(DBH,2),data=SG_T)
-summary.lm(Gr_mod3)
-#Gr_mod4<-lm(log(Growth.rate)~DBH,data=SG_T)#if error multiplicative, grows with x-axis, then it is constant on log-scale
-theta.0 <- min(SG_C$Growth.rate) * 0.5  
-model.0 <- lm(log(Growth.rate - theta.0) ~ DBH, data=SG_C)  
-alpha.0 <- exp(coef(model.0)[1])
-beta.0 <- coef(model.0)[2]
-start1 <- list(alpha = alpha.0, beta = beta.0, theta = theta.0)
-start2<-list(alpha = alpha.0, beta = beta.0)
-Gr_mod4 <- nls(Growth.rate ~ alpha * exp(beta * DBH) + theta , data = SG_C, start = start1)
-Gr_mod5 <- nls(Growth.rate ~ alpha * exp(beta * DBH) , data = SG_C, start = start2)
-anova(Gr_mod4,Gr_mod5)#model simplification not justified, keep theta or model is signifcantly worse
-AIC(Gr_mod3,Gr_mod4)
-
-#==> APPENDIX 1, FIGURE S2 <====
 # function for computing mean, DS, max and min values
 #note, the correct equation for the 95%SI would be mean+/-SI*t(0.975,n-1)
 min.mean.sd.max <- function(x) {
@@ -283,35 +277,28 @@ windows(25,20)
 ggarrange(p1,p2,p3,p4,labels=c("A","B","C","D"),ncol=2,nrow=2)
 
 # ====> MAIN TEXT, Figure 3  <========
-#setwd("to wherever you want the png to go")
-png("Fig_3.png",width=8.5,height=4,units='cm',res=450)
-par(mfrow=c(1,2))
-par(mar=c(2,1.5,1.5,0.5)+0.1)
-par(cex.lab=0.25,cex=0.7,cex.sub=0.7,cex.axis=0.5)
-plot(SG_T$DBH,SG_T$Growth.rate,xlab="",ylab="",ylim=c(0.9,1.55),xlim=c(0,30),col=rgb(0,0.6,0.5),cex=0.5,mgp=c(0.1,0.3,0),axes=F,frame=T)
-title(ylab="DBH-ratio",mgp=c(1,0.3,0),cex.lab=0.6,xlab="DBH (cm)")
-axis(1,seq(0,30,5),labels=c(0,5,10,15,20,25,30),tck=-0.05,mgp=c(1,0.1,0))
-axis(2,seq(0.9,1.5,0.1),labels=c(0.9,1,1.1,1.2,1.3,1.4,1.5),tck=-0.05,mgp=c(1,0.4,0),las=1)
-text(22.8,1.5,expression(paste(italic('R. niveus')," removed")),col=rgb(0,0.6,0.5),cex=0.6)
-x<-0:30
-y<-predict(Gr_mod4,list(DBH=x))
-lines(x,y,col=rgb(0,0.6,0.5),lwd=3)
-mtext('A',side=3,line=0,at=-4,cex=0.75)  
 
-plot(SG_C$DBH,SG_C$Growth.rate,xlab="",ylab="",ylim=c(0.9,1.55),xlim=c(0,30),col="orange3",cex=0.5,mgp=c(0.1,0.3,0),axes=F,frame=T)
-title(ylab="DBH-ratio",xlab="DBH (cm)",mgp=c(1,0.3,0),cex.lab=0.6)
-axis(1,seq(0,30,5),labels=c(0,5,10,15,20,25,30),tck=-0.05,mgp=c(1,0.1,0))
-axis(2,seq(0.9,1.5,0.1),labels=c(0.9,1,1.1,1.2,1.3,1.4,1.5),tck=-0.05,mgp=c(1,0.4,0),las=1)
-text(23.6,1.5,expression(paste(italic('R. niveus')," present")),col="orange3",cex=0.6)
+setwd("E:/University/PAPERS/E-Pacific/Scalesia/Submission_Final/")
+png("Fig_3.png",width=8.5,height=6,units='cm',res=450)
+par(mar=c(3.6,4,1.5,0.5)+0.1)
+par(cex.lab=0.8,cex=0.7,cex.sub=0.7,cex.axis=0.6)
+plot(SG[which(SG$group==1),]$DBH,SG[which(SG$group==1),]$Growth.rate,xlab="",ylab="",ylim=c(0.8,1.65),xlim=c(0,30),col=rgb(0,0.6,0.5),cex=0.5,mgp=c(0.1,0.3,0),axes=F,frame=T)
+par(new=T)
+plot(SG[which(SG$group==2),]$DBH,SG[which(SG$group==2),]$Growth.rate,xlab="",ylab="",ylim=c(0.8,1.65),xlim=c(0,30),col="orange3",cex=0.5,mgp=c(0.1,0.3,0),axes=F,frame=T)
+title(ylab="DBH-ratio",mgp=c(1,0.3,0),cex.lab=0.6,xlab="DBH (cm)")
+axis(1,seq(0,30,5),labels=c(0,5,10,15,20,25,30),tck=-0.02,mgp=c(1,0.1,0))
+axis(2,seq(0.8,1.6,0.1),labels=c(0.8,0.9,1,1.1,1.2,1.3,1.4,1.5,1.6),tck=-0.02,mgp=c(1,0.4,0),las=1)
 x<-0:30
 y<-predict(Gr_mod2,list(DBH=x))
-lines(x,y,col="orange3",lwd=3)
-mtext('B',side=3,line=0,at=-4,cex=0.75)
+lines(x,y,col="black",lwd=3)
+legend(20,1.6, legend=c(expression(italic("R. niveus")*" removed"), expression(italic("R. niveus")*" present")),pch=21,col=c(rgb(0,0.6,0.5),rgb(0.9,0.6,0)),cex=0.6,bty="n")
+box(lty="solid")
 dev.off()
 
 #==> MAIN TEXT, FIGURE 4<====
 # function for computing mean, DS, max and min values
 #note, the correct equation for the 95%SI would be mean+/-SI*t(0.975,n-1)
+#setwd("where you want your file")
 
 min.mean.sd.max <- function(x) {
   r <- c(min(x), mean(x) - sd(x), mean(x), mean(x) + sd(x), max(x))
@@ -337,29 +324,26 @@ p2<-ggplot(data=filter(ScalGrwT, Growth.rate>0.5 & Growth.rate<1.5),aes(x=year,y
   theme_bw(base_size=14)+ylim(c(0.7,1.5))+
   theme(axis.text.x=element_text(angle=90,size=14,colour="black"),axis.text.y=element_text(size=14,colour="black"))+
   labs(y="DBH-ratio",x="Sampling year")
+windows(25,12)
 p3<-ggarrange(p2,p1,labels=c("A","B"),font.label=list(size=28,color="black"),ncol=2,nrow=1) 
+p3
 ggsave("Fig_4.png",p3,width=8.5,height=5,dpi=450)
 
-# Q1: Does relationship DBH-ratio/DBH, over all data points irrespective of plot and year, change with treatment?
-# REMOVE # APPENDIX 1, TABLE S-5<================
 
 #Q2: does Treatment have an effect on DBH-ratio overall? At this point not interested in "year".
 #log(Growth rate) bc. we have established exponential relationship!
-m2<-lmer(log(Growth.rate)~DBH*group+(1|group/year/Plot),REML=FALSE,data=Grw.pos)#no REML to allow Anova comparison
-m3<-lmer(log(Growth.rate)~DBH+group+year+(1|group/year/Plot),REML=FALSE,data=Grw.pos)#no REML to allow Anova comparison
-#try with lme, same thing but different tables
 
 #check best model structure
 #random intercept; also: # DBH*Group=>DBH+group+DBH:Group ->two-way interaction
-#as dataset use Grw.pos or SG_C,SG_T+
-growth<-rbind(SG_T,SG_C)
+#as dataset use Grw.pos (not SG as in some test vsrsions)
+
 control.list <- lmeControl(maxIter = 500, msMaxIter = 500, msMaxEval=500,tolerance = 0.1, msTol = 0.1, sing.tol=1e-20)
-m2_1e<-lme(log(Growth.rate)~1, random=~1|Plot, data=growth, method="ML")# baseline model, only intercept
-m2_1d<-lme(log(Growth.rate)~DBH+group, random=~1|Plot,data=growth,method="ML")# random intercepts only, based on Plot, no DBH-Group interaction
-m2_1c<-lme(log(Growth.rate)~DBH*group, random=~1|Plot,data=growth,method="ML")# random intercepts only, based on Plot, with DBH-Group interaction
-m2_1b<-lme(log(Growth.rate)~DBH+group, random=~1+group|Plot, data=growth, method="ML",control=control.list)#a random intercept AND slope for each group, no DBH-Group interaction
-m2_1a<-lme(log(Growth.rate)~DBH*group, random=~1+group|Plot, data=growth, method="ML",control=control.list)#full model: a random intercept AND slope for each group, DBH-Group interaction
-anova(m2_1a,m2_1b,m2_1c,m2_1d,m2_1e)
+m2_1e<-lme(log(Growth.rate)~1, random=~1|Plot, data=Grw.pos, method="ML")# baseline model, only intercept
+m2_1d<-lme(log(Growth.rate)~DBH+group, random=~1|Plot,data=Grw.pos,method="ML")# random intercepts only, based on Plot, no DBH-Group interaction
+m2_1c<-lme(log(Growth.rate)~DBH*group, random=~1|Plot,data=Grw.pos,method="ML")# random intercepts only, based on Plot, with DBH-Group interaction
+m2_1b<-lme(log(Growth.rate)~DBH+group, random=~1+group|Plot, data=Grw.pos, method="ML",control=control.list)#a random intercept AND slope for each group, no DBH-Group interaction
+m2_1a<-lme(log(Growth.rate)~DBH*group, random=~1+group|Plot, data=Grw.pos, method="ML",control=control.list)#full model: a random intercept AND slope for each group, DBH-Group interaction
+anova(m2_1a,m2_1b,m2_1c,m2_1d,m2_1e)# this works, because models are ML, with REML anova is not permitted
 
 #Pinheiro and Bates p. 19 "the overall effect of the factor should be assessed with anova, not by t-values of p assoc. with fixed-effect params"
 anova(m2_1a) #Appendix: Table S7======
@@ -368,10 +352,11 @@ plot(m2_1a,form=resid(.,type="p")~fitted(.)|Plot,abline=0) #[Pinheiro and Bates 
 #the chosen model is m2_1a; present with REML, for different output tables once with "lme" and once with "lmer"
 #Note: using "tree" as the random effect instead of "plot", or "Plot/tree" doesn't make the model fit any better
 m2_2<-lme(log(Growth.rate)~DBH*group, random=~1+group|Plot, data=growth, method="REML")#a random intercept AND slope for each group
-100*vars/sum(vars)
 summary(m2_2)
+vars<-c(0.09,0.001,0.01,0.001)
+100*vars/sum(vars)
 r.squaredGLMM(m2_2)
-#also do a lmer to get output and calculate where the variance in the random components is (Crowley, p. 704)
+#also do a lmer to get output and calculate where the variance in the random components is (Crawley, p. 704)
 mod2_2aa<-lmer(log(Growth.rate)~DBH+group+(1+group|Plot),REML=T, data=growth)
 #mod2_2aa<-lmer(log(Growth.rate)~DBH+group+(1|year),REML=T, data=Grw.pos)#random intercept only
 summary(mod2_2aa)
@@ -556,8 +541,10 @@ p2<-ggplot(data=filter(DBH.pos, group==2),aes(x=DBH))+
   theme_bw()+theme(axis.text.x=element_text(angle=90,size=11,colour="black"),axis.text.y=element_text(size=11,colour="black"))+
   labs(y="Count",x="DBH-size-classes")+theme(axis.title=element_text(size=12))+
   theme(strip.text.x=element_text(size=13,color="black",face="bold"),panel.grid.major=element_blank(),panel.grid.minor=element_blank())
+windows(10,10)
 p5<-ggarrange(p1,p2,labels=c("A","B"),font.label=list(size=20,color="black"),ncol=1,nrow=2)
 ggsave("Fig_7.png",p5,width=8.5,dpi=450)
+p5
 
 #now extract the data from the ggplot
 dat1<-ggplot_build(p1)
@@ -586,7 +573,8 @@ p1<-ggplot(surv_dat,aes(x=size.class,y=frequency))+geom_point(shape=21,fill="gre
   theme(axis.title=element_text(size=14))
   #scale_x_discrete(labels=labls)
 ggsave("Fig_8.png",p1,width=8.5,dpi=450)
-
+windows(10,5)
+p1
 # ============= time-lag towards extinction=============
 #use Crowley's survivor function (exp(-t/mu)) to explore how long a population without recruits will last, mu=fraction of those who die 1/deaths, so 
 # this is the wellknown N(t)-N(0)*exp(rt), only expressed as exp(t*-proportion of deaths)
