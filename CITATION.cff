@@ -1,0 +1,9 @@
+cff-version: 1.1.0
+message: "If you use this software, please cite it as below."
+authors:
+  - family-names: Riegl
+    given-names: Bernhard
+    orcid: https://orcid.org/0000-0002-6003-9324
+title: Riegl et al.: Invasive blackberry outcompetes the endemic Galapagos tree daisy Scalesia pedunculata
+version: v.1.0.1
+date-released: 2023-03-14
