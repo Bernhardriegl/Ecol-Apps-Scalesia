@@ -197,7 +197,6 @@ Scal_Grw<-filter(ScalGrw2, year!="Mar21")
 Scal_Grw[is.na(Scal_Grw)]<-0
 Scal_Grw[Scal_Grw==Inf]<-0
 SG<-Scal_Grw[-which(Scal_Grw$Growth.rate==0),]#eliminate outliers and zeros
-#SG<-SG[-which(SG$Growth.rate>1.7),]#eliminate one outlier
 
 #DHB-ratio with diameter as second-order polynomial in main text
 # APPENDIX 1, TABLE S-5 and main text Table 2
@@ -277,7 +276,6 @@ windows(25,20)
 ggarrange(p1,p2,p3,p4,labels=c("A","B","C","D"),ncol=2,nrow=2)
 
 # ====> MAIN TEXT, Figure 3  <========
-
 setwd("E:/University/PAPERS/E-Pacific/Scalesia/Submission_Final/")
 png("Fig_3.png",width=8.5,height=6,units='cm',res=450)
 par(mar=c(3.6,4,1.5,0.5)+0.1)
@@ -332,11 +330,9 @@ ggsave("Fig_4.png",p3,width=8.5,height=5,dpi=450)
 
 #Q2: does Treatment have an effect on DBH-ratio overall? At this point not interested in "year".
 #log(Growth rate) bc. we have established exponential relationship!
-
 #check best model structure
 #random intercept; also: # DBH*Group=>DBH+group+DBH:Group ->two-way interaction
-#as dataset use Grw.pos (not SG as in some test vsrsions)
-
+#as dataset use Grw.pos (not SG as in some test versions)
 control.list <- lmeControl(maxIter = 500, msMaxIter = 500, msMaxEval=500,tolerance = 0.1, msTol = 0.1, sing.tol=1e-20)
 m2_1e<-lme(log(Growth.rate)~1, random=~1|Plot, data=Grw.pos, method="ML")# baseline model, only intercept
 m2_1d<-lme(log(Growth.rate)~DBH+group, random=~1|Plot,data=Grw.pos,method="ML")# random intercepts only, based on Plot, no DBH-Group interaction
@@ -347,7 +343,7 @@ anova(m2_1a,m2_1b,m2_1c,m2_1d,m2_1e)# this works, because models are ML, with RE
 
 #Pinheiro and Bates p. 19 "the overall effect of the factor should be assessed with anova, not by t-values of p assoc. with fixed-effect params"
 anova(m2_1a) #Appendix: Table S7======
-plot(m2_1a,form=resid(.,type="p")~fitted(.)|Plot,abline=0) #[Pinheiro and Bates (2000)p.21]; Appendix Figure S3=====
+plot(m2_1a,form=resid(.,type="p")~fitted(.)|Plot,abline=0) #[Pinheiro and Bates (2000)p.21]; APPENDIX FIGURE S3=====
 
 #the chosen model is m2_1a; present with REML, for different output tables once with "lme" and once with "lmer"
 #Note: using "tree" as the random effect instead of "plot", or "Plot/tree" doesn't make the model fit any better
@@ -364,7 +360,7 @@ vars<-c(0.11,0.004,0.0054) #these are the fixed effects from REML table
 100*vars/sum(vars)
 r.squaredGLMM(mod2_2aa)#R2m marginal R2=fixed effects; R2C=conditional, combined fixed and random effects explain X% of variance
 
-#multiple variance structure doesn't help
+#multiple variance structure doesn't help, so abandon
 m2_2b<-lme(log(Growth.rate)~DBH*group, random=~1+group|Plot, weights=varIdent(form=~1|Plot),data=Grw.pos, method="ML")
 #summary(m2_2b)
 
@@ -388,7 +384,7 @@ colnames(dat)<-c("Group","Growth","Data")
 dat<-as.data.frame(dat)
 dat$Data<-as.numeric(as.character(dat$Data)) #Note::as above, line 284
 
-#============> MAIN TEXT, Fig.5<==============================================================
+#============> MAIN TEXT, FIGURE 5<==============================================================
 #more fast growers in Treatment....but were there in general more trees? Change to percentage of total
 plodat<-dat3
 pls1<-sum(plodat[c(1,3,5)])
@@ -429,11 +425,11 @@ Mort_C<-1-(S$survivors[10:16]/S$survivors[9:15])
 
 #calculate how many died every year and do the stats
 # these must be GLMs with Gamma error structure
-S.T<-S[1:8,]#T=Treatment, group 1
-S.RC<-S[9:16,]#RC=RubusControl, group 2
+S.T<-S[1:8,]#T=Rubus removed, group 1
+S.RC<-S[9:16,]#RC=Rubus present, group 2
 Abs.deaths.p.y.T<-S.T$survivors[-length(S.T$survivors)]-S.T$survivors[-1]
 Abs.deaths.p.y.RC<-S.RC$survivors[-length(S.RC$survivors)]-S.RC$survivors[-1]
-#test for differences between the Treatment/Control
+#test for differences between the Rubus removed/Rubus present
 #comparing absolute depths makes only marginal sense - better to compare relative because of varuable N
 Ab_Surv<-glm(Abs.deaths.p.y.T~Abs.deaths.p.y.RC, family=poisson)#counts have poisson error structure
 summary(Ab_Surv)
@@ -452,7 +448,7 @@ Counter<-c(rep(1,7),rep(2,7))
 Surv_dat<-c(Rel.deaths.p.y.T,Rel.deaths.p.y.RC)
 Mod<-glm(Surv_dat~Counter,family=quasibinomial)
 
-#while glm is preferrable, a Welch's t-test should do the same trick
+#while glm is preferrable, a Welch's t-test should do the same trick-> also given in main text
 t.test(Rel.survivors.p.y.T,Rel.survivors.p.y.RC)#<- not significant
 
 #======> MAIN TEXT, FIGURE 6 
@@ -467,7 +463,6 @@ Srv<-as.data.frame(t(Srv))
 colnames(Srv)<-c("Group","Year","PropSurvivors")
 Srv$PropSurvivors<-as.numeric(as.character(Srv$PropSurvivors))
 
-windows(10,4)
 p4<- ggplot(data=Srv,aes(x=Year,y=PropSurvivors,fill=Group))+geom_col(position="dodge",color="black")+
   theme_bw(base_size=14)+ 
   scale_y_continuous(limits=c(0.,0.40),expand=c(0,0))+
@@ -477,7 +472,6 @@ p4<- ggplot(data=Srv,aes(x=Year,y=PropSurvivors,fill=Group))+geom_col(position="
   theme(legend.position=c(0.8,0.8),panel.grid.major=element_blank(),panel.grid.minor=element_blank(),legend.title=element_blank())
 p4
 ggsave("Fig_6.png",p4,width=8.5,dpi=450)
-
 
 #Now look at what size most trees are lost, use the wide data for this SCAL
 #first count how many have died, that is seen by turning column Mar19 into 0/1
@@ -525,7 +519,6 @@ h4.RC<-hist(D18.RC$Feb17,breaks=c(0,5,10,15,20,25,30,35),col=rgb(0.9,0.6,0),ylim
 h5.RC<-hist(D19.RC$Feb18,breaks=c(0,5,10,15,20,25,30,35),col=rgb(0.9,0.6,0),ylim=c(0,25),main="DBH of trees that died 2018-2019",xlab="size classes")
 h6.RC<-hist(D20.RC$Mar19,breaks=c(0,5,10,15,20,25,30,35),col=rgb(0.9,0.6,0),ylim=c(0,25),main="DBH of trees that died 2019-2020",xlab="size classes")
 h7.RC<-hist(D21.RC$Mar20,breaks=c(0,5,10,15,20,25,30,35),col=rgb(0.9,0.6,0),ylim=c(0,25),main="DBH of trees that died 2020-2021",xlab="size classes")
-
 
 #===> MAIN TEXT, FIGURE 7 using a smarter way than what I did above:
 DBH.pos<-filter(ScalGrw,DBH>0)
@@ -576,5 +569,5 @@ ggsave("Fig_8.png",p1,width=8.5,dpi=450)
 windows(10,5)
 p1
 # ============= time-lag towards extinction=============
-#use Crowley's survivor function (exp(-t/mu)) to explore how long a population without recruits will last, mu=fraction of those who die 1/deaths, so 
+#use Crawley's (2013) survivor function (exp(-t/mu)) to explore how long a population without recruits will last, mu=fraction of those who die 1/deaths, so 
 # this is the wellknown N(t)-N(0)*exp(rt), only expressed as exp(t*-proportion of deaths)
